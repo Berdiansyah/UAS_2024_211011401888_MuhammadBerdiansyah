@@ -11,7 +11,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Crypto Price List',
-      theme: ThemeData(primaryColor: Colors.white),
+      theme: ThemeData(
+        primarySwatch: Colors.teal,
+        colorScheme: ColorScheme.fromSwatch(primarySwatch: Colors.teal).copyWith(secondary: Colors.orangeAccent),
+        textTheme: TextTheme(
+          bodyText1: TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold, color: Colors.black87),
+          bodyText2: TextStyle(fontSize: 16.0, color: Colors.grey[600]),
+        ),
+      ),
       home: CryptoList(),
     );
   }
@@ -25,15 +32,7 @@ class CryptoList extends StatefulWidget {
 class CryptoListState extends State<CryptoList> {
   List _cryptoList = [];
   final _saved = Set<Map>();
-  final _boldStyle = TextStyle(fontWeight: FontWeight.bold);
   bool _loading = false;
-  final List<MaterialColor> _colors = [
-    Colors.blue,
-    Colors.indigo,
-    Colors.lime,
-    Colors.teal,
-    Colors.cyan
-  ];
 
   Future<void> getCryptoPrices() async {
     print('getting crypto prices');
@@ -70,10 +69,20 @@ class CryptoListState extends State<CryptoList> {
     return "\$" + (d = (d * fac).round() / fac).toString();
   }
 
-  CircleAvatar _getLeadingWidget(String name, MaterialColor color) {
+  CircleAvatar _getLeadingWidget(String name) {
+    final Random random = Random();
+    final Color color = Color.fromARGB(
+      255,
+      random.nextInt(256),
+      random.nextInt(256),
+      random.nextInt(256),
+    );
     return CircleAvatar(
       backgroundColor: color,
-      child: Text(name[0]),
+      child: Text(
+        name[0],
+        style: TextStyle(color: Colors.white),
+      ),
     );
   }
 
@@ -100,12 +109,26 @@ class CryptoListState extends State<CryptoList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('CryptoList'),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.teal, Colors.tealAccent],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: Text('CryptoList', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
         actions: <Widget>[
           IconButton(icon: Icon(Icons.list), onPressed: _pushSaved),
         ],
       ),
       body: _getMainBody(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: getCryptoPrices,
+        child: Icon(Icons.refresh),
+        backgroundColor: Theme.of(context).colorScheme.secondary,
+      ),
     );
   }
 
@@ -116,11 +139,14 @@ class CryptoListState extends State<CryptoList> {
           final Iterable<ListTile> tiles = _saved.map(
             (crypto) {
               return ListTile(
-                leading: _getLeadingWidget(crypto['name'], Colors.blue),
-                title: Text(crypto['name']),
+                leading: _getLeadingWidget(crypto['name']),
+                title: Text(
+                  crypto['name'],
+                  style: Theme.of(context).textTheme.bodyText1,
+                ),
                 subtitle: Text(
                   cryptoPrice(crypto),
-                  style: _boldStyle,
+                  style: Theme.of(context).textTheme.bodyText2,
                 ),
               );
             },
@@ -147,13 +173,12 @@ class CryptoListState extends State<CryptoList> {
       itemBuilder: (context, i) {
         final index = i;
         print(index);
-        final MaterialColor color = _colors[index % _colors.length];
-        return _buildRow(_cryptoList[index], color);
+        return _buildRow(_cryptoList[index]);
       },
     );
   }
 
-  Widget _buildRow(Map crypto, MaterialColor color) {
+  Widget _buildRow(Map crypto) {
     final bool favourited = _saved.contains(crypto);
 
     void _fav() {
@@ -166,17 +191,38 @@ class CryptoListState extends State<CryptoList> {
       });
     }
 
-    return ListTile(
-      leading: _getLeadingWidget(crypto['name'], color),
-      title: Text(crypto['name']),
-      subtitle: Text(
-        cryptoPrice(crypto),
-        style: _boldStyle,
+    return Card(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15.0),
       ),
-      trailing: IconButton(
-        icon: Icon(favourited ? Icons.favorite : Icons.favorite_border),
-        color: favourited ? Colors.red : null,
-        onPressed: _fav,
+      elevation: 10.0,
+      margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 5.0),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.teal.shade50, Colors.teal.shade100],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(15.0),
+        ),
+        child: ListTile(
+          contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+          leading: _getLeadingWidget(crypto['name']),
+          title: Text(
+            crypto['name'],
+            style: Theme.of(context).textTheme.bodyText1,
+          ),
+          subtitle: Text(
+            cryptoPrice(crypto),
+            style: Theme.of(context).textTheme.bodyText2,
+          ),
+          trailing: IconButton(
+            icon: Icon(favourited ? Icons.favorite : Icons.favorite_border),
+            color: favourited ? Colors.red : null,
+            onPressed: _fav,
+          ),
+        ),
       ),
     );
   }
